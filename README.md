@@ -6,6 +6,32 @@ denominated in **USDC**, deployed on **Etherlink Shadownet** blockchain, orchest
 
 ---
 
+### 🚀 The PariMarket Vision
+
+PariMarket is a "self-driving" financial platform. Unlike traditional prediction markets that require manual management and complex order books, PariMarket combines **Pari-mutuel math** with **Google AI Orchestration** to create a fully autonomous experience.
+
+#### 1. Core Functionality: The Pari-Mutuel Model
+The project uses a **pari-mutuel** betting system (similar to horse racing). Instead of betting against a "bookie" with fixed odds, all users bet into a collective pool.
+- **The Pool:** All USDC from "YES" and "NO" bets are combined into one pot.
+- **The Payout:** When the market resolves, the winners split the total pot (minus a 3% protocol fee) proportionally to their stake.
+- **The Odds:** Odds are dynamic. If everyone bets "YES," a "NO" bet becomes extremely lucrative because you'd be splitting a huge pot with very few other winners.
+
+#### 2. Why it is better than existing markets (Polymarket, etc.)
+- **Guaranteed Liquidity:** Unlike order-book markets (like Polymarket) that require market makers, PariMarket’s pari-mutuel model ensures you can **always** place a bet. Your stake simply adjusts the pool share.
+- **100% Autonomous:** Most markets require human intervention for creation and resolution. PariMarket is **self-driving**—AI agents handle the entire lifecycle.
+- **Immediate Data-Driven Resolution:** No complex "dispute" phases. Markets are resolved instantly by Oracle Agents using verified CoinGecko price data.
+- **Low Friction:** A single, portable HTML frontend connects directly to the blockchain. No heavy infrastructure required.
+
+#### 3. How the AI Agents run the system
+The system is powered by a "squad" of AI agents built using the **Google Agent Development Kit (ADK)** and powered by **Gemini 2.0/2.5 Flash**. 
+- **The Conductor (Root Orchestrator):** Wakes up every hour, takes a "snapshot" of the blockchain, and directs the sub-agents on what needs to be done.
+- **The Strategist (Market Creation Agent):** Analyzes current BTC/ETH volatility using Gemini to set "challenging" strike prices that generate the most betting interest.
+- **The Timekeeper (Timer Agent):** Manages the lifecycle, ensuring betting windows open and close on time to prevent cheating.
+- **The Truth-Teller (Oracle Agent):** The bridge to the real world. Fetches historical price data from CoinGecko and signs the official on-chain result.
+- **The Banker (Distribution Agent):** Automatically identifies winners and pushes USDC payouts directly to their wallets.
+
+---
+
 ## Table of Contents
 
 1. [What it does](#1-what-it-does)
