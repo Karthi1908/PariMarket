@@ -26,9 +26,8 @@ The project uses a **pari-mutuel** betting system (similar to horse racing). Ins
 The system is powered by a "squad" of AI agents built using the **Google Agent Development Kit (ADK)** and powered by **Gemini 2.0/2.5 Flash**. 
 - **The Conductor (Root Orchestrator):** Wakes up every hour, takes a "snapshot" of the blockchain, and directs the sub-agents on what needs to be done.
 - **The Strategist (Market Creation Agent):** Analyzes current BTC/ETH volatility using Gemini to set "challenging" strike prices that generate the most betting interest.
-- **The Timekeeper (Timer Agent):** Manages the lifecycle, ensuring betting windows open and close on time to prevent cheating.
-- **The Truth-Teller (Oracle Agent):** The bridge to the real world. Fetches historical price data from CoinGecko and signs the official on-chain result.
-- **The Banker (Distribution Agent):** Automatically identifies winners and pushes USDC payouts directly to their wallets.
+- **The Timekeeper (Operations Agent):** Manages the lifecycle, ensuring betting windows open and close on time to prevent cheating.
+- **The Truth-Teller (Oracle Agent):** The bridge to the real world. Fetches historical price data from CoinGecko via MCP and signs the official on-chain result.
 
 #### 4. Blockchain: The Single Source of Truth
 PariMarket is built on the philosophy that **code is law**. The blockchain acts as the ultimate authority:
