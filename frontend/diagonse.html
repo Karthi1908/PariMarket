@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>PariMarket — Frontend Diagnostics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<style>
+  body { background:#0b0f1a; color:#e2e8f0; font-family:'JetBrains Mono',monospace; padding:24px; font-size:13px; line-height:1.7; }
+  h2 { color:#3b82f6; margin-bottom:8px; }
+  .ok  { color:#10b981; }
+  .err { color:#ef4444; }
+  .warn{ color:#f59e0b; }
+  .info{ color:#94a3b8; }
+  pre  { background:#161d2e; border:1px solid #1e2d45; padding:16px; border-radius:8px; overflow-x:auto; margin:8px 0; white-space:pre-wrap; }
+  button { padding:8px 18px; background:#3b82f6; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; margin:4px; }
+  input  { background:#161d2e; border:1px solid #1e2d45; color:#e2e8f0; padding:8px 12px; border-radius:6px; font-size:13px; width:420px; }
+  .row   { display:flex; align-items:center; gap:10px; margin:10px 0; flex-wrap:wrap; }
+  #log   { margin-top:16px; }
+</style>
+</head>
+<body>
+<h2>PariMarket — Frontend Diagnostics</h2>
+<p class="info">Run this page to diagnose exactly why markets aren't loading in the main frontend.</p>
+
+<div class="row">
+  <label>Contract address:</label>
+  <input id="addr" value="0x2289CD3D5cbb861Ed1a564674c117b29D08DAEb7"/>
+</div>
+<div class="row">
+  <label>RPC URL:</label>
+  <input id="rpc" value="https://ethereum-sepolia-rpc.publicnode.com"/>
+</div>
+<div class="row">
+  <button onclick="runDiag()">▶ Run Diagnostics</button>
+  <button onclick="document.getElementById('log').innerHTML=''">Clear</button>
+</div>
+<div id="log"></div>
+
+<script>
+const CONTRACT_ABI = [
+  {"stateMutability":"view","type":"function","name":"market_count","inputs":[],"outputs":[{"name":"","type":"uint256"}]},
+  {"stateMutability":"view","type":"function","name":"get_market","inputs":[{"name":"market_id","type":"uint256"}],"outputs":[{"name":"","type":"tuple","components":[{"name":"asset","type":"string"},{"name":"question","type":"string"},{"name":"strike_price","type":"uint256"},{"name":"resolution_time","type":"uint256"},{"name":"close_time","type":"uint256"},{"name":"is_resolved","type":"bool"},{"name":"is_cancelled","type":"bool"},{"name":"betting_open","type":"bool"},{"name":"outcome","type":"bool"},{"name":"yes_pool","type":"uint256"},{"name":"no_pool","type":"uint256"},{"name":"total_bets","type":"uint256"},{"name":"oracle_price","type":"uint256"},{"name":"created_at","type":"uint256"}]}]},
+  {"stateMutability":"view","type":"function","name":"get_odds","inputs":[{"name":"market_id","type":"uint256"}],"outputs":[{"name":"","type":"uint256"},{"name":"","type":"uint256"}]},
+];
+
+const log = document.getElementById('log');
+function line(msg, cls='info') {
+  log.innerHTML += `<div class="${cls}">${msg}</div>`;
+}
+function block(title, content) {
+  log.innerHTML += `<div style="margin:12px 0"><div style="color:#8b5cf6;font-weight:700;margin-bottom:4px">${title}</div><pre>${content}</pre></div>`;
+}
+
+async function runDiag() {
+  log.innerHTML = '';
+  const addr = document.getElementById('addr').value.trim();
+  const rpc  = document.getElementById('rpc').value.trim();
+
+  line(`Testing contract: ${addr}`);
+  line(`RPC: ${rpc}`);
+  line('');
+
+  // ── Test 1: RPC connection ────────────────────────────────────────
+  line('── TEST 1: RPC Connection', 'warn');
+  let provider;
+  try {
+    provider = new ethers.JsonRpcProvider(rpc);
+    const bn = await provider.getBlockNumber();
+    const cn = (await provider.getNetwork()).chainId;
+    line(`✓ Connected — block #${bn}, chain_id=${cn}`, 'ok');
+    if (Number(cn) !== 11155111) {
+      line(`⚠ Expected chain 11155111 (Sepolia), got ${cn}`, 'err');
+    }
+  } catch(e) {
+    line(`✗ RPC connection failed: ${e.message}`, 'err');
+    line('Try: https://rpc.sepolia.org or https://sepolia.drpc.org', 'warn');
+    return;
+  }
+
+  // ── Test 2: Bytecode ──────────────────────────────────────────────
+  line('', '');
+  line('── TEST 2: Contract Bytecode', 'warn');
+  try {
+    const code = await provider.getCode(addr);
+    if (code === '0x') {
+      line(`✗ No bytecode at ${addr} — contract not deployed here`, 'err');
+      return;
+    }
+    line(`✓ Bytecode: ${code.length} chars (${(code.length-2)/2} bytes)`, 'ok');
+  } catch(e) {
+    line(`✗ getCode failed: ${e.message}`, 'err');
+    return;
+  }
+
+  // ── Test 3: market_count() raw selector ──────────────────────────
+  line('', '');
+  line('── TEST 3: market_count() raw call', 'warn');
+  try {
+    const sel = ethers.id('market_count()').slice(0, 10);
+    line(`Selector: ${sel}`);
+    const result = await provider.call({ to: addr, data: sel });
+    line(`Raw response: ${result} (${result.length} chars = ${(result.length-2)/2} bytes)`);
+    if (result === '0x' || result.length < 66) {
+      line('✗ Got empty response — ABI mismatch or wrong contract', 'err');
+    } else {
+      const count = parseInt(result, 16);
+      line(`✓ market_count = ${count}`, 'ok');
+    }
+  } catch(e) {
+    line(`✗ Raw call failed: ${e.message}`, 'err');
+  }
+
+  // ── Test 4: market_count() via ABI ───────────────────────────────
+  line('', '');
+  line('── TEST 4: market_count() via ABI Contract', 'warn');
+  let count = 0;
+  try {
+    const c = new ethers.Contract(addr, CONTRACT_ABI, provider);
+    count = Number(await c.market_count());
+    line(`✓ market_count = ${count}`, 'ok');
+  } catch(e) {
+    line(`✗ market_count() via ABI failed: ${e.message}`, 'err');
+    return;
+  }
+
+  if (count === 0) {
+    line('ℹ No markets created yet — agents need to run first', 'info');
+    line('Check: python agents\\run_orchestrator.py is running', 'warn');
+    return;
+  }
+
+  // ── Test 5: get_market(0) ─────────────────────────────────────────
+  line('', '');
+  line('── TEST 5: get_market(0) struct decode', 'warn');
+  try {
+    const c = new ethers.Contract(addr, CONTRACT_ABI, provider);
+    const m = await c.get_market(0);
+
+    // Test both index and named access
+    const byIndex = m[0];
+    const byName  = m.asset;
+
+    line(`✓ Decoded successfully`, 'ok');
+    line(`  m[0] (index access) = "${byIndex}"`, 'ok');
+    line(`  m.asset (name access) = "${byName}"`, byName ? 'ok' : 'err');
+
+    block('Full market[0] data', JSON.stringify({
+      asset:           m.asset || m[0],
+      question:        (m.question || m[1])?.slice(0,80) + '...',
+      strike_price:    (Number(m.strike_price || m[2]) / 1e8).toFixed(2),
+      resolution_time: new Date(Number(m.resolution_time || m[3]) * 1000).toISOString(),
+      close_time:      new Date(Number(m.close_time || m[4]) * 1000).toISOString(),
+      is_resolved:     m.is_resolved ?? m[5],
+      is_cancelled:    m.is_cancelled ?? m[6],
+      betting_open:    m.betting_open ?? m[7],
+      yes_pool_usdc:   (Number(m.yes_pool || m[9]) / 1e6).toFixed(2),
+      no_pool_usdc:    (Number(m.no_pool || m[10]) / 1e6).toFixed(2),
+      total_bets:      Number(m.total_bets || m[11]),
+    }, null, 2));
+
+    if (!byName) {
+      line('⚠ Named access (m.asset) is undefined — using index access', 'warn');
+      line('This is the bug: parseMarket() uses m.asset but must use m[0]', 'err');
+    }
+  } catch(e) {
+    line(`✗ get_market(0) failed: ${e.message}`, 'err');
+    block('Error details', e.stack || e.message);
+  }
+
+  // ── Test 6: get_odds(0) ───────────────────────────────────────────
+  line('', '');
+  line('── TEST 6: get_odds(0)', 'warn');
+  try {
+    const c = new ethers.Contract(addr, CONTRACT_ABI, provider);
+    const odds = await c.get_odds(0);
+    line(`✓ YES=${Number(odds[0])/100}%  NO=${Number(odds[1])/100}%`, 'ok');
+  } catch(e) {
+    line(`✗ get_odds(0) failed: ${e.message}`, 'err');
+  }
+
+  // ── Test 7: All markets summary ───────────────────────────────────
+  line('', '');
+  line(`── TEST 7: Load all ${count} markets`, 'warn');
+  try {
+    const c = new ethers.Contract(addr, CONTRACT_ABI, provider);
+    for (let i = 0; i < count; i++) {
+      const [m, odds] = await Promise.all([c.get_market(i), c.get_odds(i)]);
+      const asset    = m.asset   || m[0];
+      const question = m.question || m[1];
+      const betting  = m.betting_open ?? m[7];
+      const resolved = m.is_resolved  ?? m[5];
+      const yesPct   = Number(odds[0]) / 100;
+      line(`✓ Market #${i}: ${asset} | betting_open=${betting} | resolved=${resolved} | YES ${yesPct}%`, 'ok');
+      line(`  → "${question?.slice(0,80)}"`, 'info');
+    }
+  } catch(e) {
+    line(`✗ Load all markets failed: ${e.message}`, 'err');
+  }
+
+  line('', '');
+  line('── DIAGNOSIS COMPLETE ──', 'warn');
+  line('If all tests passed but the main frontend shows nothing:', 'info');
+  line('  → Check that CFG.CONTRACT in index.html is set to: ' + addr, 'warn');
+  line('  → Open browser DevTools → Console tab for JS errors', 'info');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>PariMarket — Prediction Markets</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --card: #161d2e;
+      --border: #1e2d45;
+      --border2: #2a3f5f;
+      --yes: #10b981;
+      --yes-bg: rgba(16, 185, 129, .1);
+      --yes-bdr: rgba(16, 185, 129, .3);
+      --no: #ef4444;
+      --no-bg: rgba(239, 68, 68, .1);
+      --no-bdr: rgba(239, 68, 68, .3);
+      --gold: #f59e0b;
+      --gold-bg: rgba(245, 158, 11, .1);
+      --blue: #3b82f6;
+      --blue-bg: rgba(59, 130, 246, .1);
+      --purple: #8b5cf6;
+      --txt: #e2e8f0;
+      --txt2: #94a3b8;
+      --txt3: #475569;
+      --btc: #f7931a;
+      --eth: #627eea;
+      --r: 12px;
+      --r-sm: 8px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--txt);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* subtle grid bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 40px 40px;
+      opacity: .3;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #root {
+      position: relative;
+      z-index: 1;
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 4px;
+    }
+
+    /* ── TOAST ── */
+    .toast-area {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 12px 18px;
+      border-radius: var(--r-sm);
+      font-size: 13px;
+      font-weight: 500;
+      backdrop-filter: blur(16px);
+      border: 1px solid;
+      max-width: 320px;
+      animation: slideIn .2s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .toast-ok {
+      background: rgba(16, 185, 129, .15);
+      border-color: var(--yes-bdr);
+      color: var(--yes);
+    }
+
+    .toast-err {
+      background: rgba(239, 68, 68, .15);
+      border-color: var(--no-bdr);
+      color: var(--no);
+    }
+
+    .toast-info {
+      background: rgba(59, 130, 246, .15);
+      border-color: rgba(59, 130, 246, .3);
+      color: var(--blue);
+    }
+
+    /* ── SPINNER ── */
+    .spin {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* ── MODAL OVERLAY ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, .75);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      animation: fadeIn .15s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+      animation: slideUp .2s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback, useRef } = React;
+
+    /* ══════════════════════════════════════════════════════
+       CONFIG — Update CONTRACT after running deploy.py
+       ══════════════════════════════════════════════════════ */
+    const CFG = {
+      CONTRACT: '0x9b47703A489107672A3C8D42Be787145cC86fE96',
+      CHAIN_ID: 127823,
+      RPC: 'https://node.shadownet.etherlink.com',
+      USDC: '0x32788465e7170898f1CcFA9065Fafb025c3c9A37',
+      NETWORK: 'Etherlink Shadownet Testnet',
+    };
+
+    /* ── Full JSON ABI (not human-readable strings — avoids tuple decode issues) ── */
+    const CONTRACT_ABI = [
+      { "stateMutability": "view", "type": "function", "name": "market_count", "inputs": [], "outputs": [{ "name": "", "type": "uint256" }] },
+      { "stateMutability": "view", "type": "function", "name": "get_market", "inputs": [{ "name": "market_id", "type": "uint256" }], "outputs": [{ "name": "", "type": "tuple", "components": [{ "name": "asset", "type": "string" }, { "name": "question", "type": "string" }, { "name": "strike_price", "type": "uint256" }, { "name": "resolution_time", "type": "uint256" }, { "name": "close_time", "type": "uint256" }, { "name": "is_resolved", "type": "bool" }, { "name": "is_cancelled", "type": "bool" }, { "name": "betting_open", "type": "bool" }, { "name": "outcome", "type": "bool" }, { "name": "yes_pool", "type": "uint256" }, { "name": "no_pool", "type": "uint256" }, { "name": "total_bets", "type": "uint256" }, { "name": "oracle_price", "type": "uint256" }, { "name": "created_at", "type": "uint256" }] }] },
+      { "stateMutability": "view", "type": "function", "name": "get_bet", "inputs": [{ "name": "bettor", "type": "address" }, { "name": "market_id", "type": "uint256" }], "outputs": [{ "name": "", "type": "tuple", "components": [{ "name": "amount", "type": "uint256" }, { "name": "outcome", "type": "bool" }, { "name": "claimed", "type": "bool" }, { "name": "placed_at", "type": "uint256" }] }] },
+      { "stateMutability": "view", "type": "function", "name": "get_odds", "inputs": [{ "name": "market_id", "type": "uint256" }], "outputs": [{ "name": "", "type": "uint256" }, { "name": "", "type": "uint256" }] },
+      { "stateMutability": "view", "type": "function", "name": "is_accepting_bets", "inputs": [{ "name": "market_id", "type": "uint256" }], "outputs": [{ "name": "", "type": "bool" }] },
+      { "stateMutability": "view", "type": "function", "name": "calculate_payout", "inputs": [{ "name": "market_id", "type": "uint256" }, { "name": "bettor", "type": "address" }], "outputs": [{ "name": "", "type": "uint256" }] },
+      { "stateMutability": "nonpayable", "type": "function", "name": "place_bet", "inputs": [{ "name": "market_id", "type": "uint256" }, { "name": "outcome", "type": "bool" }, { "name": "amount", "type": "uint256" }], "outputs": [] },
+      { "stateMutability": "nonpayable", "type": "function", "name": "claim_winnings", "inputs": [{ "name": "market_id", "type": "uint256" }], "outputs": [] },
+      { "stateMutability": "nonpayable", "type": "function", "name": "claim_refund", "inputs": [{ "name": "market_id", "type": "uint256" }], "outputs": [] }
+    ];
+    const USDC_ABI = [
+      { "inputs": [{ "internalType": "address", "name": "spender", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "approve", "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }], "stateMutability": "nonpayable", "type": "function" },
+      { "inputs": [{ "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "spender", "type": "address" }], "name": "allowance", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+      { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }], "name": "balanceOf", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" },
+      { "inputs": [], "name": "decimals", "outputs": [{ "internalType": "uint8", "name": "", "type": "uint8" }], "stateMutability": "view", "type": "function" },
+      { "inputs": [{ "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "mint", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+    ];
+
+    /* ── Helpers ── */
+    // Try RPCs in order until one works (only Etherlink endpoints)
+    const RPCS = [
+      CFG.RPC,
+      'https://rpc.ankr.com/etherlink_shadownet_testnet',
+    ];
+    async function getWorkingProvider() {
+      for (const rpc of RPCS) {
+        try {
+          const p = new ethers.JsonRpcProvider(rpc);
+          await Promise.race([p.getBlockNumber(), new Promise((_, r) => setTimeout(r, 5000))]);
+          console.log('[PariMarket] Using RPC:', rpc);
+          return p;
+        } catch (e) {
+          console.warn('[PariMarket] RPC failed:', rpc, e.message);
+        }
+      }
+      throw new Error('All RPCs failed. Check your internet connection.');
+    }
+    const ro = () => new ethers.JsonRpcProvider(CFG.RPC);
+    const con = (s) => new ethers.Contract(CFG.CONTRACT, CONTRACT_ABI, s || ro());
+
+    /* ── Raw JSON-RPC call (bypasses ethers.js to ensure correct eth_call format) ── */
+    let _rpcUrl = CFG.RPC;
+    let _rpcId = 1;
+    async function rawCall(to, data) {
+      const body = JSON.stringify({
+        jsonrpc: '2.0', id: _rpcId++, method: 'eth_call',
+        params: [{ to, data }, 'latest'],
+      });
+      const res = await fetch(_rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      const json = await res.json();
+      if (json.error) throw new Error('RPC error: ' + json.error.message);
+      return json.result; // hex string
+    }
+
+    /* ABI encode/decode helpers for contract reads */
+    const iface = new ethers.Interface(CONTRACT_ABI);
+    async function callRead(funcName, args = []) {
+      const data = iface.encodeFunctionData(funcName, args);
+      const raw = await rawCall(CFG.CONTRACT, data);
+      if (!raw || raw === '0x') throw new Error(funcName + ' returned empty data from RPC');
+      return iface.decodeFunctionResult(funcName, raw);
+    }
+    const usc = (s) => new ethers.Contract(CFG.USDC, USDC_ABI, s || ro());
+    const fmt = (n, d = 2) => '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const fmtU = (raw) => Number(raw) / 1e6;
+    const fmtP = (raw) => Number(raw) / 1e8;
+    const fmtTs = (ts) => new Date(Number(ts) * 1000).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: false }) + ' UTC';
+    function countdown(ts) {
+      const d = Number(ts) - Math.floor(Date.now() / 1000);
+      if (d <= 0) return 'ended';
+      const h = Math.floor(d / 3600), m = Math.floor((d % 3600) / 60);
+      return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+    function parseMarket(id, m, odds) {
+      // Ethers v6 Result objects from Vyper structs may use index or named access.
+      // We try named first and fall back to positional index (matches parse_market() in web3_utils.py).
+      // Field order: asset[0] question[1] strike_price[2] resolution_time[3] close_time[4]
+      //              is_resolved[5] is_cancelled[6] betting_open[7] outcome[8]
+      //              yes_pool[9] no_pool[10] total_bets[11] oracle_price[12] created_at[13]
+      const asset = m.asset ?? m[0];
+      const question = m.question ?? m[1];
+      const strikeRaw = m.strike_price ?? m[2];
+      const resTime = m.resolution_time ?? m[3];
+      const closeTime = m.close_time ?? m[4];
+      const isResolved = m.is_resolved ?? m[5];
+      const isCancelled = m.is_cancelled ?? m[6];
+      const bettingOpen = m.betting_open ?? m[7];
+      const outcome = m.outcome ?? m[8];
+      const yesPool = m.yes_pool ?? m[9];
+      const noPool = m.no_pool ?? m[10];
+      const totalBets = m.total_bets ?? m[11];
+      const oracleRaw = m.oracle_price ?? m[12];
+
+      const yU = fmtU(yesPool), nU = fmtU(noPool);
+      const now = Math.floor(Date.now() / 1000);
+      let status = 'pending';
+      if (isCancelled) status = 'cancelled';
+      else if (isResolved) status = 'resolved';
+      else if (now >= Number(closeTime)) status = 'closed';
+      else if (bettingOpen) status = 'live';
+      return {
+        id, status,
+        asset, question,
+        strike: fmtP(strikeRaw),
+        resTime: Number(resTime), closeTime: Number(closeTime),
+        isResolved, isCancelled, bettingOpen, outcome,
+        yesU: yU, noU: nU, totalU: yU + nU,
+        totalBets: Number(totalBets),
+        oraclePrice: fmtP(oracleRaw),
+        yesPct: Number(odds[0]) / 100,
+        noPct: Number(odds[1]) / 100,
+      };
+    }
+
+    /* ══════════════════════════════════════════════════════
+       TOAST
+       ══════════════════════════════════════════════════════ */
+    function useToast() {
+      const [toasts, setToasts] = useState([]);
+      const push = useCallback((msg, type = 'info') => {
+        const id = Date.now();
+        setToasts(t => [...t, { id, msg, type }]);
+        setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+      }, []);
+      return { toasts, push };
+    }
+
+    /* ══════════════════════════════════════════════════════
+       STATUS BADGE
+       ══════════════════════════════════════════════════════ */
+    function Badge({ status }) {
+      const map = {
+        live: ['#10b981', 'rgba(16,185,129,.12)', '● LIVE'],
+        pending: ['#3b82f6', 'rgba(59,130,246,.12)', '◷ PENDING'],
+        closed: ['#f59e0b', 'rgba(245,158,11,.12)', '⏸ CLOSED'],
+        resolved: ['#8b5cf6', 'rgba(139,92,246,.12)', '✓ RESOLVED'],
+        cancelled: ['#ef4444', 'rgba(239,68,68,.12)', '✕ CANCELLED'],
+      };
+      const [color, bg, label] = map[status] || map.pending;
+      return (
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '2px 10px', borderRadius: 4,
+          background: bg, color, border: `1px solid ${color}33`,
+          fontSize: 11, fontFamily: 'JetBrains Mono', fontWeight: 600, letterSpacing: '.06em'
+        }}>{label}</span>
+      );
+    }
+
+    /* ══════════════════════════════════════════════════════
+       ODDS BAR
+       ══════════════════════════════════════════════════════ */
+    function OddsBar({ yesPct, noPct }) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+            <span style={{ color: 'var(--yes)', fontFamily: 'JetBrains Mono', fontWeight: 600 }}>YES {yesPct.toFixed(1)}%</span>
+            <span style={{ color: 'var(--no)', fontFamily: 'JetBrains Mono', fontWeight: 600 }}>NO {noPct.toFixed(1)}%</span>
+          </div>
+          <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden', display: 'flex' }}>
+            <div style={{ width: `${yesPct}%`, background: 'var(--yes)', transition: 'width .4s ease' }} />
+            <div style={{ flex: 1, background: 'var(--no)', transition: 'all .4s ease' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--txt3)' }}>
+            <span>Bet YES → {yesPct > 0 ? (100 / yesPct).toFixed(2) : '∞'}x return</span>
+            <span>Bet NO → {noPct > 0 ? (100 / noPct).toFixed(2) : '∞'}x return</span>
+          </div>
+        </div>
+      );
+    }
+
+    /* ══════════════════════════════════════════════════════
+       BET MODAL
+       ══════════════════════════════════════════════════════ */
+    function BetModal({ market, side, onClose, wallet, signer, push, onDone }) {
+      const [amount, setAmount] = useState('');
+      const [loading, setLoading] = useState(false);
+      const isYes = side === true;
+      const color = isYes ? 'var(--yes)' : 'var(--no)';
+      const label = isYes ? 'YES' : 'NO';
+      const pct = isYes ? market.yesPct : market.noPct;
+
+      const estPayout = () => {
+        const a = parseFloat(amount) || 0;
+        if (a <= 0 || pct <= 0) return 0;
+        return a * (100 / pct) * 0.97;
+      };
+      const estMultiplier = () => {
+        if (pct <= 0) return '∞';
+        return (100 / pct * 0.97).toFixed(2);
+      };
+
+      async function submit() {
+        const a = parseFloat(amount);
+        if (!a || a < 1) { push('Minimum bet is 1 USDC', 'err'); return; }
+        setLoading(true);
+        try {
+          const micro = BigInt(Math.round(a * 1e6));
+          const u = usc(signer);
+          const c = con(signer);
+          // Check allowance
+          const allowed = await u.allowance(wallet, CFG.CONTRACT);
+          if (BigInt(allowed) < micro) {
+            push('Approving USDC…', 'info');
+            const atx = await u.approve(CFG.CONTRACT, ethers.MaxUint256);
+            await atx.wait();
+            push('USDC approved', 'ok');
+          }
+          push(`Placing ${label} bet…`, 'info');
+          const tx = await c.place_bet(market.id, isYes, micro);
+          await tx.wait();
+          push(`${label} bet placed! 🎉`, 'ok');
+          onDone();
+          onClose();
+        } catch (e) {
+          push(e.reason || e.message?.slice(0, 60) || 'Transaction failed', 'err');
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      return (
+        <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+          <div className="modal">
+            {/* Header */}
+            <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontWeight: 700, fontSize: 16 }}>Place Bet</span>
+                <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+              </div>
+              <div style={{
+                padding: '10px 14px', borderRadius: 8,
+                background: isYes ? 'var(--yes-bg)' : 'var(--no-bg)',
+                border: `1px solid ${isYes ? 'var(--yes-bdr)' : 'var(--no-bdr)'}`,
+                fontSize: 13, color: isYes ? 'var(--yes)' : 'var(--no)', fontWeight: 600
+              }}>
+                {label} — {market.question}
+              </div>
+            </div>
+
+            {/* Body */}
+            <div style={{ padding: '20px 24px' }}>
+              {/* Side selector */}
+              <div style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 12, color: 'var(--txt2)', marginBottom: 8, fontWeight: 500 }}>You are predicting</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  {[true, false].map(s => {
+                    const sel = s === side;
+                    const c = s ? 'var(--yes)' : 'var(--no)';
+                    const bg = s ? 'var(--yes-bg)' : 'var(--no-bg)';
+                    const bd = s ? 'var(--yes-bdr)' : 'var(--no-bdr)';
+                    return (
+                      <div key={s ? 'yes' : 'no'} style={{
+                        padding: '12px', borderRadius: 8, textAlign: 'center',
+                        border: `2px solid ${sel ? c : 'var(--border)'}`,
+                        background: sel ? bg : 'transparent',
+                        cursor: 'default', transition: 'all .15s',
+                      }}>
+                        <div style={{ fontSize: 18, fontWeight: 700, color: sel ? c : 'var(--txt3)' }}>
+                          {s ? '✓ YES' : '✗ NO'}
+                        </div>
+                        <div style={{ fontSize: 11, color: sel ? c : 'var(--txt3)', marginTop: 2 }}>
+                          {s ? market.yesPct.toFixed(1) : market.noPct.toFixed(1)}% pool
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Amount */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: 'var(--txt2)', marginBottom: 8, fontWeight: 500 }}>Amount (USDC)</div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number" min="1" step="1" placeholder="0.00"
+                    value={amount} onChange={e => setAmount(e.target.value)}
+                    style={{
+                      width: '100%', padding: '12px 60px 12px 14px',
+                      background: 'var(--surface)', border: '1px solid var(--border2)',
+                      borderRadius: 8, color: 'var(--txt)', fontSize: 16,
+                      fontFamily: 'JetBrains Mono', outline: 'none',
+                      transition: 'border-color .15s',
+                    }}
+                    onFocus={e => e.target.style.borderColor = color}
+                    onBlur={e => e.target.style.borderColor = 'var(--border2)'}
+                  />
+                  <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--txt3)', fontSize: 12, fontWeight: 600 }}>USDC</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  {[10, 50, 100, 500].map(v => (
+                    <button key={v} onClick={() => setAmount(String(v))} style={{
+                      flex: 1, padding: '5px 0', background: 'var(--surface)',
+                      border: '1px solid var(--border)', borderRadius: 6,
+                      color: 'var(--txt2)', cursor: 'pointer', fontSize: 12, fontFamily: 'JetBrains Mono',
+                      transition: 'all .1s',
+                    }}
+                      onMouseOver={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color; }}
+                      onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--txt2)'; }}
+                    >{v}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payout estimate */}
+              {parseFloat(amount) > 0 && (
+                <div style={{
+                  padding: '12px 14px', borderRadius: 8, marginBottom: 16,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--txt3)', marginBottom: 2 }}>Est. payout if {label}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color, fontFamily: 'JetBrains Mono' }}>
+                      {fmt(estPayout())} USDC
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 11, color: 'var(--txt3)', marginBottom: 2 }}>Multiplier</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color }}>{estMultiplier()}×</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Strike info */}
+              <div style={{
+                padding: '10px 14px', borderRadius: 8, marginBottom: 20,
+                background: 'var(--gold-bg)', border: '1px solid rgba(245,158,11,.25)',
+                fontSize: 12, color: 'var(--gold)'
+              }}>
+                Strike: {fmt(market.strike, 0)} · Resolves {fmtTs(market.resTime)}
+              </div>
+
+              <button
+                onClick={submit} disabled={loading || !amount}
+                style={{
+                  width: '100%', padding: '13px', borderRadius: 8, border: 'none',
+                  background: isYes ? 'var(--yes)' : 'var(--no)',
+                  color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
+                  opacity: (loading || !amount) ? .5 : 1,
+                  transition: 'opacity .15s, transform .1s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                {loading ? <><span className="spin" style={{ borderTopColor: '#fff' }}></span> Processing…</> : `Place ${label} Bet`}
+              </button>
+
+              <p style={{ textAlign: 'center', fontSize: 11, color: 'var(--txt3)', marginTop: 10 }}>
+                3% protocol fee deducted from winnings · Pari-mutuel pools
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ══════════════════════════════════════════════════════
+       MARKET CARD
+       ══════════════════════════════════════════════════════ */
+    function MarketCard({ market, wallet, signer, push, onBet, onRefresh }) {
+      const [claiming, setClaiming] = useState(false);
+      const [userBet, setUserBet] = useState(null);
+
+      useEffect(() => {
+        if (!wallet) return;
+        callRead('get_bet', [wallet, market.id]).then(([b]) => {
+          if (Number(b.amount) > 0) setUserBet({
+            amount: fmtU(b.amount),
+            outcome: b.outcome,
+            claimed: b.claimed,
+          });
+        }).catch(() => { });
+      }, [wallet, market.id]);
+
+      async function claimWinnings() {
+        setClaiming(true);
+        try {
+          const tx = await con(signer).claim_winnings(market.id);
+          await tx.wait();
+          push('Winnings claimed! 🎉', 'ok');
+          onRefresh();
+        } catch (e) { push(e.reason || 'Claim failed', 'err'); }
+        finally { setClaiming(false); }
+      }
+
+      async function claimRefund() {
+        setClaiming(true);
+        try {
+          const tx = await con(signer).claim_refund(market.id);
+          await tx.wait();
+          push('Refund claimed', 'ok');
+          onRefresh();
+        } catch (e) { push(e.reason || 'Refund failed', 'err'); }
+        finally { setClaiming(false); }
+      }
+
+      const assetColor = market.asset === 'BTC' ? 'var(--btc)' : 'var(--eth)';
+      const isLive = market.status === 'live';
+      const isResolved = market.status === 'resolved';
+      const isCancelled = market.status === 'cancelled';
+      const canBet = isLive && wallet;
+
+      const wonBet = userBet && isResolved && userBet.outcome === market.outcome;
+      const lostBet = userBet && isResolved && userBet.outcome !== market.outcome;
+
+      return (
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 16, overflow: 'hidden', transition: 'border-color .2s, transform .2s',
+          display: 'flex', flexDirection: 'column',
+        }}
+          onMouseOver={e => { e.currentTarget.style.borderColor = 'var(--border2)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+          onMouseOut={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none'; }}
+        >
+          {/* Card header */}
+          <div style={{
+            padding: '16px 20px 14px',
+            borderBottom: '1px solid var(--border)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,.02) 0%, transparent 100%)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{
+                  padding: '3px 10px', borderRadius: 6,
+                  background: `${assetColor}18`, color: assetColor,
+                  border: `1px solid ${assetColor}33`,
+                  fontFamily: 'JetBrains Mono', fontWeight: 700, fontSize: 12,
+                }}>{market.asset}</span>
+                <Badge status={market.status} />
+              </div>
+              <span style={{
+                fontFamily: 'JetBrains Mono', fontSize: 11, color: 'var(--txt3)',
+              }}>#{market.id}</span>
+            </div>
+
+            {/* Question */}
+            <p style={{
+              fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: 'var(--txt)',
+              marginBottom: 12,
+            }}>{market.question}</p>
+
+            {/* Strike + time */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{
+                padding: '4px 10px', borderRadius: 6,
+                background: 'var(--gold-bg)', border: '1px solid rgba(245,158,11,.2)',
+                fontFamily: 'JetBrains Mono', fontSize: 12, color: 'var(--gold)',
+              }}>Strike {fmt(market.strike, 0)}</div>
+              {isLive && (
+                <div style={{
+                  padding: '4px 10px', borderRadius: 6,
+                  background: 'var(--blue-bg)', border: '1px solid rgba(59,130,246,.2)',
+                  fontFamily: 'JetBrains Mono', fontSize: 12, color: 'var(--blue)',
+                }}>Closes {countdown(market.closeTime)}</div>
+              )}
+              {isResolved && (
+                <div style={{
+                  padding: '4px 10px', borderRadius: 6,
+                  background: market.outcome ? 'var(--yes-bg)' : 'var(--no-bg)',
+                  border: market.outcome ? '1px solid var(--yes-bdr)' : '1px solid var(--no-bdr)',
+                  fontFamily: 'JetBrains Mono', fontSize: 12,
+                  color: market.outcome ? 'var(--yes)' : 'var(--no)',
+                  fontWeight: 700,
+                }}>
+                  Settled: {market.outcome ? 'YES ✓' : 'NO ✗'} · Oracle {fmt(market.oraclePrice, 0)}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Odds & pools */}
+          <div style={{ padding: '16px 20px' }}>
+            <OddsBar yesPct={market.yesPct} noPct={market.noPct} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 14 }}>
+              {[
+                ['YES Pool', fmt(market.yesU, 0) + 'U', 'var(--yes)'],
+                ['NO Pool', fmt(market.noU, 0) + 'U', 'var(--no)'],
+                ['Bettors', market.totalBets, 'var(--txt2)'],
+              ].map(([label, val, color]) => (
+                <div key={label} style={{
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '8px 10px', textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '.05em' }}>{label}</div>
+                  <div style={{ fontSize: 13, color, fontFamily: 'JetBrains Mono', fontWeight: 600 }}>{val}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* User bet badge */}
+            {userBet && (
+              <div style={{
+                marginTop: 12, padding: '8px 12px', borderRadius: 8,
+                background: wonBet ? 'var(--yes-bg)' : lostBet ? 'var(--no-bg)' : 'var(--blue-bg)',
+                border: `1px solid ${wonBet ? 'var(--yes-bdr)' : lostBet ? 'var(--no-bdr)' : 'rgba(59,130,246,.3)'}`,
+                fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              }}>
+                <span style={{ color: wonBet ? 'var(--yes)' : lostBet ? 'var(--no)' : 'var(--blue)', fontWeight: 600 }}>
+                  Your bet: {userBet.outcome ? 'YES' : 'NO'} · {fmt(userBet.amount)} USDC
+                  {wonBet && !userBet.claimed && ' 🏆 Won!'}
+                  {wonBet && userBet.claimed && ' ✓ Claimed'}
+                  {lostBet && ' ✗ Lost'}
+                </span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+              {/* YES/NO bet buttons for live markets */}
+              {canBet && (
+                <>
+                  <button onClick={() => onBet(market, true)} style={{
+                    flex: 1, padding: '11px 8px', borderRadius: 8, border: '2px solid var(--yes)',
+                    background: 'var(--yes-bg)', color: 'var(--yes)',
+                    fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'all .15s',
+                    fontFamily: 'Space Grotesk',
+                  }}
+                    onMouseOver={e => { e.currentTarget.style.background = 'var(--yes)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseOut={e => { e.currentTarget.style.background = 'var(--yes-bg)'; e.currentTarget.style.color = 'var(--yes)'; }}
+                  >✓ YES</button>
+                  <button onClick={() => onBet(market, false)} style={{
+                    flex: 1, padding: '11px 8px', borderRadius: 8, border: '2px solid var(--no)',
+                    background: 'var(--no-bg)', color: 'var(--no)',
+                    fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'all .15s',
+                    fontFamily: 'Space Grotesk',
+                  }}
+                    onMouseOver={e => { e.currentTarget.style.background = 'var(--no)'; e.currentTarget.style.color = '#fff'; }}
+                    onMouseOut={e => { e.currentTarget.style.background = 'var(--no-bg)'; e.currentTarget.style.color = 'var(--no)'; }}
+                  >✗ NO</button>
+                </>
+              )}
+
+              {/* Claim winnings */}
+              {isResolved && wallet && wonBet && !userBet.claimed && (
+                <button onClick={claimWinnings} disabled={claiming} style={{
+                  flex: 1, padding: '11px', borderRadius: 8, border: '2px solid var(--yes)',
+                  background: 'var(--yes)', color: '#fff',
+                  fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                  opacity: claiming ? .6 : 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}>
+                  {claiming ? <><span className="spin" style={{ borderTopColor: '#fff', width: 14, height: 14 }}></span> Claiming…</> : '🎉 Claim Winnings'}
+                </button>
+              )}
+
+              {/* Claim refund */}
+              {isCancelled && wallet && userBet && !userBet.claimed && (
+                <button onClick={claimRefund} disabled={claiming} style={{
+                  flex: 1, padding: '11px', borderRadius: 8, border: '1px solid var(--border2)',
+                  background: 'var(--surface)', color: 'var(--txt)',
+                  fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                  opacity: claiming ? .6 : 1,
+                }}>
+                  {claiming ? 'Claiming…' : 'Claim Refund'}
+                </button>
+              )}
+
+              {/* Connect prompt */}
+              {isLive && !wallet && (
+                <div style={{
+                  flex: 1, padding: '11px', borderRadius: 8,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  textAlign: 'center', color: 'var(--txt3)', fontSize: 12,
+                }}>Connect wallet to bet</div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ══════════════════════════════════════════════════════
+       HEADER
+       ══════════════════════════════════════════════════════ */
+    function Header({ wallet, onConnect, onDisconnect, onMint }) {
+      return (
+        <header style={{
+          position: 'sticky', top: 0, zIndex: 100,
+          background: 'rgba(11,15,26,.92)', backdropFilter: 'blur(16px)',
+          borderBottom: '1px solid var(--border)', padding: '0 24px',
+          height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 8,
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'JetBrains Mono', fontWeight: 700, fontSize: 13, color: '#fff',
+            }}>PM</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16, letterSpacing: '-.01em' }}>PariMarket</div>
+              <div style={{ fontSize: 11, color: 'var(--txt3)', fontFamily: 'JetBrains Mono' }}>{CFG.NETWORK}</div>
+            </div>
+          </div>
+
+          {!wallet ? (
+            <button onClick={onConnect} style={{
+              padding: '8px 18px', borderRadius: 8,
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              border: 'none', color: '#fff', fontWeight: 600, fontSize: 13,
+              cursor: 'pointer', transition: 'opacity .15s',
+            }}
+              onMouseOver={e => e.currentTarget.style.opacity = '.85'}
+              onMouseOut={e => e.currentTarget.style.opacity = '1'}
+            >Connect Wallet</button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                padding: '6px 14px', borderRadius: 8,
+                background: 'var(--surface)', border: '1px solid var(--border2)',
+                fontFamily: 'JetBrains Mono', fontSize: 12,
+                color: 'var(--txt2)',
+              }}>
+                <span style={{ color: 'var(--yes)', marginRight: 6 }}>●</span>
+                {wallet.slice(0, 6)}…{wallet.slice(-4)}
+              </div>
+              <button onClick={onMint} style={{
+                padding: '6px 12px', borderRadius: 8,
+                background: 'var(--gold-bg)', border: '1px solid rgba(245,158,11,.3)',
+                color: 'var(--gold)', cursor: 'pointer', fontSize: 12, fontWeight: 600
+              }}>Faucet</button>
+              <button onClick={onDisconnect} style={{
+                padding: '6px 12px', borderRadius: 8,
+                background: 'transparent', border: '1px solid var(--border)',
+                color: 'var(--txt3)', cursor: 'pointer', fontSize: 12,
+              }}>Disconnect</button>
+            </div>
+          )}
+        </header>
+      );
+    }
+
+    /* ══════════════════════════════════════════════════════
+       EMPTY STATE
+       ══════════════════════════════════════════════════════ */
+    function EmptyState({ filter }) {
+      return (
+        <div style={{
+          gridColumn: '1/-1', textAlign: 'center', padding: '64px 24px',
+          background: 'var(--card)', borderRadius: 16, border: '1px solid var(--border)',
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>
+            {filter === 'live' ? '⏳' : filter === 'resolved' ? '📋' : '🔍'}
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>No {filter} markets</div>
+          <div style={{ color: 'var(--txt3)', fontSize: 14 }}>
+            {filter === 'live'
+              ? 'Markets open for betting will appear here. The agents create new markets daily.'
+              : `No ${filter} markets found. Try a different filter.`}
+          </div>
+        </div>
+      );
+    }
+
+    /* ══════════════════════════════════════════════════════
+       MAIN APP
+       ══════════════════════════════════════════════════════ */
+    function App() {
+      const { toasts, push } = useToast();
+
+      // Wallet state
+      const [wallet, setWallet] = useState(null);
+      const [signer, setSigner] = useState(null);
+
+      // Markets state
+      const [markets, setMarkets] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [filter, setFilter] = useState('all');
+      const [refreshAt, setRefreshAt] = useState(Date.now());
+
+      // Bet modal state
+      const [betModal, setBetModal] = useState(null); // {market, side}
+
+      /* ── Connect wallet ── */
+      async function connectWallet() {
+        if (!window.ethereum) { push('Install MetaMask to connect', 'err'); return; }
+        try {
+          await window.ethereum.request({ method: 'eth_requestAccounts' });
+          const p = new ethers.BrowserProvider(window.ethereum);
+          const net = await p.getNetwork();
+          if (Number(net.chainId) !== CFG.CHAIN_ID) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x' + CFG.CHAIN_ID.toString(16) }],
+              });
+            } catch (switchErr) {
+              // Error code 4902 = chain not added to MetaMask yet — add it automatically
+              if (switchErr.code === 4902 || switchErr.code === -32603) {
+                try {
+                  await window.ethereum.request({
+                    method: 'wallet_addEthereumChain',
+                    params: [{
+                      chainId: '0x' + CFG.CHAIN_ID.toString(16),
+                      chainName: CFG.NETWORK,
+                      nativeCurrency: { name: 'XTZ', symbol: 'XTZ', decimals: 18 },
+                      rpcUrls: [CFG.RPC],
+                      blockExplorerUrls: ['https://explorer.shadownet.etherlink.com'],
+                    }],
+                  });
+                } catch (addErr) {
+                  push('Could not add ' + CFG.NETWORK + ' to your wallet: ' + (addErr.message || ''), 'err');
+                  return;
+                }
+              } else {
+                push('Please switch to ' + CFG.NETWORK + ' in your wallet', 'err');
+                return;
+              }
+            }
+          }
+          const p2 = new ethers.BrowserProvider(window.ethereum);
+          const s = await p2.getSigner();
+          setWallet(await s.getAddress());
+          setSigner(s);
+          push('Wallet connected', 'ok');
+        } catch (e) { push('Connection failed', 'err'); }
+      }
+
+
+      async function mintUsdc() {
+        if (!wallet || !signer) return;
+        try {
+          push('Minting 10,000 Dummy USDC...', 'info');
+          const u = usc(signer);
+          const d = await u.decimals();
+          const tx = await u.mint(wallet, ethers.parseUnits('10000', d));
+          await tx.wait();
+          push('10,000 USDC Faucet Minted! 🎉', 'ok');
+          setRefreshAt(Date.now());
+        } catch (e) {
+          push('Faucet failed: ' + (e.reason || e.message), 'err');
+        }
+      }
+
+      function disconnectWallet() {
+        setWallet(null); setSigner(null);
+        push('Disconnected', 'info');
+      }
+
+      /* ── Load markets ── */
+      useEffect(() => {
+        let cancelled = false;
+        async function load() {
+          setLoading(true);
+          try {
+            console.log('[PariMarket] Loading markets via raw JSON-RPC from:', CFG.CONTRACT);
+            // Use raw fetch eth_call to avoid ethers.js v6 / Etherlink null-response issues
+            const [countResult] = await callRead('market_count', []);
+            const count = Number(countResult);
+            console.log('[PariMarket] market_count:', count);
+            if (count === 0) { setMarkets([]); setLoading(false); return; }
+            const items = await Promise.all(
+              Array.from({ length: count }, (_, i) => count - 1 - i).map(async (i) => {
+                const [mResult, oddsResult] = await Promise.all([
+                  callRead('get_market', [i]),
+                  callRead('get_odds', [i]),
+                ]);
+                return parseMarket(i, mResult[0], oddsResult);
+              })
+            );
+            if (!cancelled) setMarkets(items);
+          } catch (e) {
+            console.error('[PariMarket] Load error:', e);
+            if (!cancelled) push('Load error: ' + (e.message || String(e)).slice(0, 100), 'err');
+          } finally {
+            if (!cancelled) setLoading(false);
+          }
+        }
+        load();
+        return () => { cancelled = true; };
+      }, [refreshAt]);
+
+      /* ── Auto-refresh every 60s ── */
+      useEffect(() => {
+        const id = setInterval(() => setRefreshAt(Date.now()), 60_000);
+        return () => clearInterval(id);
+      }, []);
+
+      /* ── Filtered markets ── */
+      const filtered = filter === 'all'
+        ? markets
+        : markets.filter(m => m.status === filter);
+
+      const FILTERS = [
+        { key: 'all', label: `All (${markets.length})` },
+        { key: 'live', label: `Live (${markets.filter(m => m.status === 'live').length})` },
+        { key: 'pending', label: `Pending (${markets.filter(m => m.status === 'pending').length})` },
+        { key: 'resolved', label: `Resolved (${markets.filter(m => m.status === 'resolved').length})` },
+        { key: 'closed', label: `Closed (${markets.filter(m => m.status === 'closed').length})` },
+      ];
+
+      /* ── Stats ── */
+      const totalVol = markets.reduce((s, m) => s + m.totalU, 0);
+      const liveCount = markets.filter(m => m.status === 'live').length;
+
+      return (
+        <>
+          <Header wallet={wallet} onConnect={connectWallet} onDisconnect={disconnectWallet} onMint={mintUsdc} />
+
+          {/* Stats bar */}
+          <div style={{
+            background: 'var(--surface)', borderBottom: '1px solid var(--border)',
+            padding: '12px 24px',
+          }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+              {[
+                ['Markets', markets.length],
+                ['Live Now', liveCount],
+                ['Total Volume', fmt(totalVol, 0) + ' USDC'],
+                ['Network', CFG.NETWORK],
+              ].map(([label, val]) => (
+                <div key={label} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono', fontWeight: 600, fontSize: 13, color: 'var(--txt)' }}>{val}</span>
+                </div>
+              ))}
+              <button
+                onClick={() => setRefreshAt(Date.now())}
+                style={{ marginLeft: 'auto', padding: '4px 12px', borderRadius: 6, background: 'transparent', border: '1px solid var(--border)', color: 'var(--txt2)', cursor: 'pointer', fontSize: 12 }}
+              >↻ Refresh</button>
+            </div>
+          </div>
+
+          {/* Debug info strip - helps spot config issues */}
+          <div style={{ background: 'rgba(59,130,246,.06)', borderBottom: '1px solid rgba(59,130,246,.15)', padding: '6px 24px', fontSize: 11, fontFamily: 'JetBrains Mono', color: 'var(--txt3)', display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            <span>Contract: <span style={{ color: 'var(--blue)' }}>{CFG.CONTRACT.slice(0, 10)}…{CFG.CONTRACT.slice(-6)}</span></span>
+            <span>Chain: <span style={{ color: 'var(--blue)' }}>Etherlink {CFG.CHAIN_ID}</span></span>
+            <span>RPC: <span style={{ color: 'var(--blue)' }}>{CFG.RPC.replace('https://', '').split('/')[0]}</span></span>
+          </div>
+
+          <main style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 24px 64px' }}>
+
+            {/* Page title */}
+            <div style={{ marginBottom: 24 }}>
+              <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 6 }}>Prediction Markets</h1>
+              <p style={{ color: 'var(--txt3)', fontSize: 14 }}>
+                Bet USDC on BTC and ETH price milestones. Winners share the losing pool — pari-mutuel style.
+                {!wallet && ' Connect your wallet to place bets.'}
+              </p>
+            </div>
+
+            {/* Filter tabs */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 20, flexWrap: 'wrap' }}>
+              {FILTERS.map(({ key, label }) => (
+                <button key={key} onClick={() => setFilter(key)} style={{
+                  padding: '7px 14px', borderRadius: 8, border: '1px solid',
+                  borderColor: filter === key ? 'var(--blue)' : 'var(--border)',
+                  background: filter === key ? 'var(--blue-bg)' : 'transparent',
+                  color: filter === key ? 'var(--blue)' : 'var(--txt2)',
+                  cursor: 'pointer', fontWeight: filter === key ? 600 : 400,
+                  fontSize: 13, transition: 'all .15s', fontFamily: 'Space Grotesk',
+                }}>{label}</button>
+              ))}
+            </div>
+
+            {/* Market grid */}
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--txt2)' }}>
+                <span className="spin" style={{ width: 32, height: 32, borderWidth: 3 }}></span>
+                <p style={{ marginTop: 16, fontSize: 14 }}>Loading markets from chain…</p>
+              </div>
+            ) : (
+              <div style={{
+                display: 'grid', gap: 16,
+                gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+              }}>
+                {filtered.length === 0
+                  ? <EmptyState filter={filter} />
+                  : filtered.map(m => (
+                    <MarketCard
+                      key={m.id}
+                      market={m}
+                      wallet={wallet}
+                      signer={signer}
+                      push={push}
+                      onBet={(mkt, side) => setBetModal({ market: mkt, side })}
+                      onRefresh={() => setRefreshAt(Date.now())}
+                    />
+                  ))
+                }
+              </div>
+            )}
+
+            {/* No contract configured notice */}
+            {CFG.CONTRACT.toLowerCase() === '0x' + '0'.repeat(40) && (
+              <div style={{
+                marginTop: 24, padding: '16px 20px', borderRadius: 12,
+                background: 'rgba(245,158,11,.08)', border: '1px solid rgba(245,158,11,.3)',
+                color: 'var(--gold)', fontSize: 13, lineHeight: 1.6,
+              }}>
+                ⚠ <strong>Contract address not set.</strong> Open <code>frontend/index.html</code> and update
+                <code style={{ background: 'rgba(0,0,0,.3)', padding: '1px 6px', borderRadius: 4, margin: '0 4px' }}>CFG.CONTRACT</code>
+                with your deployed contract address.
+              </div>
+            )}
+          </main>
+
+          {/* Bet modal */}
+          {betModal && (
+            <BetModal
+              market={betModal.market}
+              side={betModal.side}
+              wallet={wallet}
+              signer={signer}
+              push={push}
+              onClose={() => setBetModal(null)}
+              onDone={() => setRefreshAt(Date.now())}
+            />
+          )}
+
+          {/* Toasts */}
+          <div className="toast-area">
+            {toasts.map(t => (
+              <div key={t.id} className={`toast toast-${t.type}`}>{t.msg}</div>
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+
+</html>

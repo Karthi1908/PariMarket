@@ -1,0 +1,49 @@
+# ── Virtual environment ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+.adk/
+
+# ── Python cache ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+# NEVER commit this — it contains private keys
+.env
+
+# Keep the sample so others can configure
+!.env.sample
+
+# ── uv lock file (commit this for reproducible builds) ───────────────────────
+# uv.lock  ← uncomment to also ignore the lock file (not recommended)
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# ── Vyper compilation artifacts ───────────────────────────────────────────────
+*.abi
+*.bin
+*.json.bak
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Test artifacts ────────────────────────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage

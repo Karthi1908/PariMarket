@@ -1,0 +1,813 @@
+[
+  {
+    "name": "MarketCreated",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "asset",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "question",
+        "type": "string",
+        "indexed": false
+      },
+      {
+        "name": "strike_price",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "resolution_time",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "close_time",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "BettingOpened",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "open_time",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "BettingClosed",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "close_time",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "BetPlaced",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "bettor",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "outcome",
+        "type": "bool",
+        "indexed": false
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "MarketResolved",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "outcome",
+        "type": "bool",
+        "indexed": false
+      },
+      {
+        "name": "oracle_price",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "yes_pool",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "no_pool",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "total_bets",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "WinningsPaid",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "winner",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "payout",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "MarketCancelled",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "RefundPaid",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256",
+        "indexed": true
+      },
+      {
+        "name": "bettor",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "name": "CommissionWithdrawn",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false
+      },
+      {
+        "name": "to",
+        "type": "address",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "create_market",
+    "inputs": [
+      {
+        "name": "asset",
+        "type": "string"
+      },
+      {
+        "name": "question",
+        "type": "string"
+      },
+      {
+        "name": "strike_price",
+        "type": "uint256"
+      },
+      {
+        "name": "resolution_time",
+        "type": "uint256"
+      },
+      {
+        "name": "close_time",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "open_betting",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "close_betting",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "place_bet",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      },
+      {
+        "name": "outcome",
+        "type": "bool"
+      },
+      {
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "resolve_market",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      },
+      {
+        "name": "oracle_price",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "calculate_payout",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      },
+      {
+        "name": "bettor",
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "claim_winnings",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "batch_distribute",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "cancel_market",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "claim_refund",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "withdraw_commission",
+    "inputs": [],
+    "outputs": []
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_market",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "asset",
+            "type": "string"
+          },
+          {
+            "name": "question",
+            "type": "string"
+          },
+          {
+            "name": "strike_price",
+            "type": "uint256"
+          },
+          {
+            "name": "resolution_time",
+            "type": "uint256"
+          },
+          {
+            "name": "close_time",
+            "type": "uint256"
+          },
+          {
+            "name": "is_resolved",
+            "type": "bool"
+          },
+          {
+            "name": "is_cancelled",
+            "type": "bool"
+          },
+          {
+            "name": "betting_open",
+            "type": "bool"
+          },
+          {
+            "name": "outcome",
+            "type": "bool"
+          },
+          {
+            "name": "yes_pool",
+            "type": "uint256"
+          },
+          {
+            "name": "no_pool",
+            "type": "uint256"
+          },
+          {
+            "name": "total_bets",
+            "type": "uint256"
+          },
+          {
+            "name": "oracle_price",
+            "type": "uint256"
+          },
+          {
+            "name": "created_at",
+            "type": "uint256"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_bet",
+    "inputs": [
+      {
+        "name": "bettor",
+        "type": "address"
+      },
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcome",
+            "type": "bool"
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
+            "name": "placed_at",
+            "type": "uint256"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_bettors",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_odds",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "is_accepting_bets",
+    "inputs": [
+      {
+        "name": "market_id",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "usdc_balance",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "set_oracle",
+    "inputs": [
+      {
+        "name": "addr",
+        "type": "address"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "set_timer",
+    "inputs": [
+      {
+        "name": "addr",
+        "type": "address"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "set_distribution",
+    "inputs": [
+      {
+        "name": "addr",
+        "type": "address"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "transfer_ownership",
+    "inputs": [
+      {
+        "name": "new_owner",
+        "type": "address"
+      }
+    ],
+    "outputs": []
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "owner",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "oracle_agent",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "timer_agent",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "distribution_agent",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "markets",
+    "inputs": [
+      {
+        "name": "arg0",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "asset",
+            "type": "string"
+          },
+          {
+            "name": "question",
+            "type": "string"
+          },
+          {
+            "name": "strike_price",
+            "type": "uint256"
+          },
+          {
+            "name": "resolution_time",
+            "type": "uint256"
+          },
+          {
+            "name": "close_time",
+            "type": "uint256"
+          },
+          {
+            "name": "is_resolved",
+            "type": "bool"
+          },
+          {
+            "name": "is_cancelled",
+            "type": "bool"
+          },
+          {
+            "name": "betting_open",
+            "type": "bool"
+          },
+          {
+            "name": "outcome",
+            "type": "bool"
+          },
+          {
+            "name": "yes_pool",
+            "type": "uint256"
+          },
+          {
+            "name": "no_pool",
+            "type": "uint256"
+          },
+          {
+            "name": "total_bets",
+            "type": "uint256"
+          },
+          {
+            "name": "oracle_price",
+            "type": "uint256"
+          },
+          {
+            "name": "created_at",
+            "type": "uint256"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "market_count",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "bets",
+    "inputs": [
+      {
+        "name": "arg0",
+        "type": "address"
+      },
+      {
+        "name": "arg1",
+        "type": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "components": [
+          {
+            "name": "amount",
+            "type": "uint256"
+          },
+          {
+            "name": "outcome",
+            "type": "bool"
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
+            "name": "placed_at",
+            "type": "uint256"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "pending_commission",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_oracle",
+        "type": "address"
+      },
+      {
+        "name": "_timer",
+        "type": "address"
+      },
+      {
+        "name": "_distribution",
+        "type": "address"
+      }
+    ],
+    "outputs": []
+  }
+]

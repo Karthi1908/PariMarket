@@ -1,0 +1,24 @@
+.gcloudignore
+.git
+.gitignore
+.firebase/
+firebase.json
+frontend/
+node_modules/
+
+# Python specific
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Local secrets
+.env
+
+# Include gitignore rules
+#!include:.gitignore

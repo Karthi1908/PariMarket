@@ -1,0 +1,35 @@
+[project]
+name = "parimarket"
+version = "1.0.0"
+description = "Pari-mutuel USDC prediction market on Base — Google ADK + Gemini agents"
+requires-python = ">=3.11"
+
+dependencies = [
+    "google-adk>=1.0.0",
+    "google-generativeai>=0.8.0",
+    "web3>=7.0.0",
+    "httpx>=0.27.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "vyper==0.4.3",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
+
+[build-system]
+requires      = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["agents"]
+
+[tool.ruff]
+line-length    = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
