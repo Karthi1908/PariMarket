@@ -30,6 +30,12 @@ The system is powered by a "squad" of AI agents built using the **Google Agent D
 - **The Truth-Teller (Oracle Agent):** The bridge to the real world. Fetches historical price data from CoinGecko and signs the official on-chain result.
 - **The Banker (Distribution Agent):** Automatically identifies winners and pushes USDC payouts directly to their wallets.
 
+#### 4. Blockchain: The Single Source of Truth
+PariMarket is built on the philosophy that **code is law**. The blockchain acts as the ultimate authority:
+- **Irreversible Logic:** Once a bet is placed or a market is resolved, the action is permanent and recorded on the **Etherlink Shadownet** ledger. No human, not even the project owner, can "undo" a bet or change a payout.
+- **Transparent Math:** The pari-mutuel calculations and fee deductions happen entirely within the Vyper smart contract. Anyone can verify the math on-chain to ensure fairness.
+- **Trustless Execution:** You don't need to trust the AI agents to be "honest." The smart contract only allows the Oracle Agent to settle a market with specific, verifiable data, and the Distribution Agent can only send funds to the legitimate winners defined by the code.
+
 ---
 
 ## Table of Contents
