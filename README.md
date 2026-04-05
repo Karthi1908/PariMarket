@@ -1,12 +1,12 @@
 # PariMarket — Pari-Mutuel Prediction Market on Etherlink Shadownet
 
 A fully on-chain pari-mutuel prediction market for BTC and ETH price milestones,
-denominated in **USDC**, deployed on **Etherlink Shadownet** blockchain, orchestrated by
+denominated in **Custom-USDC**, deployed on **Etherlink Shadownet** blockchain, orchestrated by
 **Google ADK + Gemini 2.0 Flash** AI agents, with a single-file **HTML/JS** frontend.
 
 ---
 
-### 🚀 The PariMarket Vision
+### 🚀 About PariMarket
 
 PariMarket is a "self-driving" financial platform. Unlike traditional prediction markets that require manual management and complex order books, PariMarket combines **Pari-mutuel math** with **Google AI Orchestration** to create a fully autonomous experience.
 
