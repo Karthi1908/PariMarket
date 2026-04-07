@@ -4,6 +4,8 @@ A fully on-chain pari-mutuel prediction market for BTC and ETH price milestones,
 denominated in **Custom-USDC**, deployed on **Etherlink Shadownet** blockchain, orchestrated by
 **Google ADK + Gemini 2.0 Flash** AI agents, with a single-file **HTML/JS** frontend.
 
+[Parimarket link](https://prediction-490907.web.app/)
+
 ---
 
 ### 🚀 About PariMarket
